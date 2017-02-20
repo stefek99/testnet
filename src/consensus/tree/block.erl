@@ -85,7 +85,7 @@ prev_hash(X) ->
     B = block(X),
     B#block.prev_hash.
 hash(X) -> 
-    hash:doit(term_to_binary(block(X))).
+    hash:doit(term_to_binary(block_to_header(block(X)))).
 time_now() ->
     (os:system_time() div (1000000 * constants:time_units())) - constants:start_time().
 genesis() ->

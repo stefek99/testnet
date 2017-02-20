@@ -1,5 +1,8 @@
+headers should point at previous header, not at previous block.
+
 
 constants:difficulty_bits() might be too big.
+
 
 
 the new way of doing channel slash has a different problem.
@@ -33,11 +36,6 @@ proof of existence transaction type.
 
 each tx with a fee needs a to reference a recent hash. Everyone needs to be incentivized to make the hash as recent as possible.
 
-blocks should have headers.
-
-blocks should point to the previous header, not the previous block.
-
-Mining should be on headers, not on blocks.
 
 We need to reward the miner with the transaction fees, to incentivize him to include them. block:absorb_txs
 
