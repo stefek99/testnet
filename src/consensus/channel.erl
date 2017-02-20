@@ -21,6 +21,7 @@
 		  mode = 0,%0 means an active channel where money can be spent. 1 means that the channel is being closed by acc1. 2 means that the channel is being closed by acc2.
 		  entropy = 0, %This is a nonce so that old channel contracts can't be reused, even if you make a new channel with the same partner you previously had a channel with.
 		  delay = 0%this is how long you have to wait since "last_modified" to do a channel_timeout_tx.
+		  %we need to store this between a solo_close_tx and a channel_timeout_tx. That way we know we waited for long enough.
 		  }%
        ).
 acc1(C) -> C#channel.acc1.
@@ -102,6 +103,7 @@ serialize(C) ->
     ENT = constants:channel_entropy(),
     CID = C#channel.id,
     Entropy = C#channel.entropy,
+    Delay = constants:channel_delay_bits(),
     true = (Entropy - 1) < math:pow(2, ENT),
     true = (CID - 1) < math:pow(2, KL),
     << CID:KL,
@@ -116,6 +118,7 @@ serialize(C) ->
        (C#channel.rent_direction):1,
        (C#channel.mode):2,
        Entropy:ENT,
+       (C#channel.delay):Delay,
        0:Pad>>.
 deserialize(B) ->
     ACC = constants:acc_bits(),
@@ -126,6 +129,7 @@ deserialize(B) ->
     Pad = constants:channel_padding(),
     KL = constants:key_length(),
     ENT = constants:channel_entropy(),
+    Delay = constants:channel_delay_bits(),
     << ID:KL,
        B1:ACC,
        B2:ACC,
@@ -138,13 +142,14 @@ deserialize(B) ->
        B9:1,
        B10:2,
        B11:ENT,
+       B12:Delay,
        _:Pad>> = B,
     #channel{id = ID, acc1 = B1, acc2 = B2, 
 	     bal1 = B3, bal2 = B4,
 	     nonce = B5, timeout_height = B6, 
 	     last_modified = B7,
 	     rent = B8, rent_direction = B9,
-	     mode = B10, entropy = B11}.
+	     mode = B10, entropy = B11, delay = B12}.
 write(Channel, Root) ->
     ID = Channel#channel.id,
     M = serialize(Channel),
@@ -174,7 +179,13 @@ test() ->
     Entropy = 500,
     Delay = 11,
     C = new(ID,Acc1,Acc2,Bal1,Bal2,Height,Entropy,Rent, Delay),
-    C = deserialize(serialize(C)),
+    D = deserialize(serialize(C)),
+    io:fwrite("channel test"),
+    io:fwrite("\n"),
+    io:fwrite(packer:pack(C)),
+    io:fwrite("\n"),
+    io:fwrite(packer:pack(D)),
+    io:fwrite("\n"),
     NewLoc = write(C, 0),
     {_, C, _} = get(ID, NewLoc),
     success.

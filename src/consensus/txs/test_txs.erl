@@ -89,12 +89,13 @@ test(3) ->
     {Accounts2, _Channels, _, _} = tx_pool:data(),
 
     io:fwrite("account2 is "),
-	   io:fwrite(integer_to_list(Accounts2)),
+    io:fwrite(integer_to_list(Accounts2)),
     io:fwrite("\n"),
     CID = 5,
     Entropy = 432,
 
-    {Ctx2, _} = new_channel_tx:make(CID, Accounts2, 1, ID2, 100, 200, 0, Entropy, Fee),
+    Delay = 30,
+    {Ctx2, _} = new_channel_tx:make(CID, Accounts2, 1, ID2, 100, 200, 0, Entropy, Delay, Fee),
     Stx2 = keys:sign(Ctx2, Accounts2),
     SStx2 = testnet_sign:sign_tx(Stx2, NewPub, NewPriv, ID2, Accounts2), 
     absorb(SStx2),
@@ -135,8 +136,9 @@ test(4) ->
 
     CID = 5,
     Entropy = 432, 
+    Delay = 0,
 
-    {Ctx2, _} = new_channel_tx:make(CID, Accounts2, 1, ID2, 0, 0, 0, Entropy, Fee),
+    {Ctx2, _} = new_channel_tx:make(CID, Accounts2, 1, ID2, 0, 0, 0, Entropy, Delay, Fee),
     Stx2 = keys:sign(Ctx2, Accounts2),
     SStx2 = testnet_sign:sign_tx(Stx2, NewPub, NewPriv, ID2, Accounts2), 
     absorb(SStx2),
@@ -170,8 +172,9 @@ test(5) ->
 
     CID = 5,
     Entropy = 432,
+    Delay = 0,
 
-    {Ctx2, _} = new_channel_tx:make(CID, Accounts2, 1, ID2, 100, 200, 0, Entropy, Fee),
+    {Ctx2, _} = new_channel_tx:make(CID, Accounts2, 1, ID2, 100, 200, 0, Entropy, Delay, Fee),
     Stx2 = keys:sign(Ctx2, Accounts2),
     SStx2 = testnet_sign:sign_tx(Stx2, NewPub, NewPriv, ID2, Accounts2), 
     absorb(SStx2),
@@ -216,7 +219,7 @@ test(6) ->
     CID = 5,
     Entropy = 432,
 
-    {Ctx2, _} = new_channel_tx:make(CID, Accounts2, 1, ID2, 100, 200, 0, Entropy, Fee),
+    {Ctx2, _} = new_channel_tx:make(CID, Accounts2, 1, ID2, 100, 200, 0, Entropy, 10, Fee),
     Stx2 = keys:sign(Ctx2, Accounts2),
     SStx2 = testnet_sign:sign_tx(Stx2, NewPub, NewPriv, ID2, Accounts2), 
     absorb(SStx2),
