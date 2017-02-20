@@ -1,6 +1,7 @@
 -module(download_blocks).
 -export([sync_cron/0, sync_cron/1, sync_all/2, 
-	 sync/3, absorb_txs/1, tuples2lists/1]).
+	 sync/3, absorb_txs/1, tuples2lists/1,
+	 sync_txs/1]).
 
 sync_cron() -> sync_cron(30000).
 sync_cron(N) -> %30000 is 30 second.

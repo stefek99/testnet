@@ -13,8 +13,9 @@ trie_size() ->
 -define(InitialCoins, round(math:pow(2, 41)) - 1).
 initial_coins() -> ?InitialCoins.
 block_reward() -> round(math:pow(2, 29)) - 1.
-initial_difficulty() -> 1*256.%for testing purposes only
+initial_difficulty() -> 12*256.%for testing purposes only
 %6452.
+difficulty_bits() -> 24.
 
 finality() -> 26.%/docs/security.py explains why.
 address_entropy() -> 96.
@@ -120,6 +121,10 @@ block_time() ->
 time_units() -> %1000 = 1 second, 100 = 0.1 seconds
    100. 
 start_time() -> 14825749780.
+time_bits() -> 32.
+% Seconds_130_years = 60*60*24*365.24
+% 32 =~ math:log(130*60*60*24*365.24)/math:log(2). 
+    
     
 channel_entropy() -> 16. %Channel contracts only work for a channel with the same 2 account addresses, and with the same channel_entropy that has this many bits.
 %this is like another channel nonce, but we only increment it if the channel gets closed and re-created.
@@ -132,6 +137,7 @@ peers() ->
 comment_limit() -> %When a miner mines a block, they can set this many bytes to whatever they want.
     140.
 magic() -> 1.
+magic_bits() -> 16.%so we can update it more than 60000 times.
 server_ip() -> {46,101,103,165}.
 server_port() -> 8080.
 

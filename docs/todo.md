@@ -1,3 +1,7 @@
+
+constants:difficulty_bits() might be too big.
+
+
 the new way of doing channel slash has a different problem.
 We need the channel to finish at the highest nonce possible. The third party could be bribed to choose a different final state.
 We need some way to do the channel_slash transaction again and again, until a higher nonce cannot be found.
@@ -37,5 +41,4 @@ Mining should be on headers, not on blocks.
 
 We need to reward the miner with the transaction fees, to incentivize him to include them. block:absorb_txs
 
-making a channel should require both parties to sign, that way attackers can't trick servers into dropping their channel state.
 

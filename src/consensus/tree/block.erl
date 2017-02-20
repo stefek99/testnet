@@ -4,19 +4,43 @@
 	 accounts_hash/1,channels_hash/1,
 	 read/1,binary_to_file/1,block/1,prev_hash/2,
 	 prev_hash/1,read_int/1,check1/1,pow_block/1,
-	 mine_blocks/2, hashes/1,
+	 mine_blocks/2, hashes/1, block_to_header/1,
 	 median_last/2]).
 
--record(block, {height, prev_hash = 0, txs, channels, 
+-record(block, {height, prev_hash, txs, channels, 
 		accounts, mines_block, time, 
-		difficulty, comment = <<>>,
+		difficulty,
 		magic = constants:magic()}).%tries: txs, channels, census, 
--record(block_plus, {block, accounts, channels, accumulative_difficulty = 0, prev_hashes = {}}).%The accounts and channels in this structure only matter for the local node. they are pointers to the locations in memory that are the root locations of the account and channel tries on this node.
+-record(block_plus, {block, pow, accounts, channels, accumulative_difficulty = 0, prev_hashes = {}}).%The accounts and channels in this structure only matter for the local node. they are pointers to the locations in memory that are the root locations of the account and channel tries on this node.
 %prev_hash is the hash of the previous block.
 %this gets wrapped in a signature and then wrapped in a pow.
+block_to_header(Block) ->
+    Height = Block#block.height,
+    PH = Block#block.prev_hash,
+    Channels = Block#block.channels,
+    Accounts = Block#block.accounts,
+    Miner = Block#block.mines_block,
+    Time = Block#block.time,
+    Diff = Block#block.difficulty,
+    Magic = Block#block.magic,
+    %channels, accounts, miner, height, can be made into one merkle trie, which reduces the size of the header by more than half.
+    Mid = <<Height:(constants:height_bits()),
+	    Channels/binary,
+	    Accounts/binary,
+	    Miner:(constants:acc_bits())>>,
+    HM = hash:doit(Mid),
+    true = size(PH) == 12,
+    <<PH/binary,
+      HM/binary,
+      Time:(constants:time_bits()),
+      Diff:(constants:difficulty_bits()),
+      Magic:(constants:magic_bits())>>.
+      
 hashes(BP) ->
     BP#block_plus.prev_hashes.
-    
+   
+%block({Block, _Pow}) ->
+%    Block;
 block(P) when element(1, P) == pow ->
     pow:data(P);
 block(BP) when is_record(BP, block_plus) ->
@@ -72,7 +96,6 @@ genesis() ->
     Accounts = account:write(0, First),
     AccRoot = account:root_hash(Accounts),
     ChaRoot = channel:root_hash(0),
-    Comment = <<"Bitcoin Hits All-Time High as Currency Controls Drive Fear - Bloomberg Online, January 4, 2017">>,
 
     %Block = 
     %#block{height = 0,
@@ -82,10 +105,10 @@ genesis() ->
 	       %mines_block = ID,
 	       %time = 0,
 	       %difficulty = constants:initial_difficulty()},
-    Block = {pow,{block,0,0,[], ChaRoot, AccRoot,
+    Block = {pow,{block,0,<<0:(8*hash:hash_depth())>>,[], ChaRoot, AccRoot,
 		  %<<1,223,2,81,223,207,12,158,239,5,219,253>>,
 		  %<<108,171,180,35,202,56,178,151,11,85,188,193>>,
-		  1,0,4080, Comment, constants:magic()},
+		  1,0,4080, constants:magic()},
 	     4080,44358461744572027408730},
     #block_plus{block = Block, channels = 0, accounts = Accounts}.
     
@@ -111,7 +134,8 @@ absorb_txs(PrevPlus, MinesBlock, Height, Txs) ->
     
 make(PrevHash, Txs, ID) ->%ID is the user who gets rewarded for mining this block.
     ParentPlus = read(PrevHash),
-    Parent = pow:data(ParentPlus#block_plus.block),
+    Parent = block(ParentPlus),
+    %Parent = pow:data(ParentPlus#block_plus.block),
     Height = Parent#block.height + 1,
     MB = mine_block_ago(Height - constants:block_creation_maturity()),
     {NewChannels, NewAccounts} = absorb_txs(ParentPlus, MB, Height, Txs),
@@ -138,16 +162,21 @@ next_acc(Parent, ND) ->
     %We need to reward the miner the sum of transaction fees.
 mine(BP, Times) when is_record(BP, block_plus) ->
     Block = BP#block_plus.block,
-    case mine(Block, Times) of
+    case mine2(Block, Times) of
 	false -> false;
-	Mblock -> BP#block_plus{block = Mblock}
-    end;
-mine(Block, Times) ->
+	Pow -> BP#block_plus{pow = Pow}
+    end.
+mine2(Block, Times) ->
     Difficulty = Block#block.difficulty,
-    pow:pow(Block, Difficulty, Times).
-
+    Header = block_to_header(Block),
+    Pow = pow:pow(Header, Difficulty, Times),
+    Pow.
+verify({Block, Pow}) ->
+    Difficulty = Block#block.difficulty,
+    true = pow:above_min(Pow, Difficulty).
 next_difficulty(ParentPlus) ->
-    Parent = pow:data(ParentPlus#block_plus.block),
+    %Parent = pow:data(ParentPlus#block_plus.block),
+    Parent = block(ParentPlus),
     Height = Parent#block.height + 1,
     RF = constants:retarget_frequency(),
     X = Height rem RF,
@@ -191,28 +220,26 @@ check1(BP) ->
     if
 	BH == GH -> {BH, 0};
 	true ->
-	    PowBlock = pow_block(BP),
-	    Block = block(PowBlock),
+	    Block = block(BP),
 	    %io:fwrite(packer:pack(Block)),
 	    Difficulty = Block#block.difficulty,
 	    true = Difficulty >= constants:initial_difficulty(),
-	    pow:above_min(PowBlock, Difficulty),
+	    PowBlock = BP#block_plus.pow,
+	    Header = block_to_header(Block),
+	    Header = pow:data(PowBlock),
+	    true = pow:above_min(PowBlock, Difficulty),
  
 	    true = Block#block.time < time_now(),
-	    true = Block#block.time > 0,%should be replaced with > median of last 100 blocks.
 	    {BH, Block#block.prev_hash}
     end.
 
-check2(BP) when is_record(BP, block_plus) ->
-    check2(pow_block(BP));
-check2(PowBlock) ->
+%check2(BP) when is_record(BP, block_plus) ->
+%    check2(pow_block(BP));
+check2(BP) ->
     %check that the time is later than the median of the last 100 blocks.
 
     %check2 assumes that the parent is in the database already.
-    io:fwrite("made it to check 2"),
-    Block = block(PowBlock),
-    true = is_binary(Block#block.comment),
-    true = size(Block#block.comment) < constants:comment_limit(),
+    Block = block(BP),
     true = Block#block.magic == constants:magic(),
     Difficulty = Block#block.difficulty,
     PH = Block#block.prev_hash,
@@ -220,20 +247,13 @@ check2(PowBlock) ->
     Difficulty = next_difficulty(ParentPlus),
     true = is_record(ParentPlus, block_plus),
     Prev = block(ParentPlus),
-    io:fwrite("before median check\n"),
     ML = median_last(PH, constants:block_time_after_median()),
-    io:fwrite("ML is "),
-    io:fwrite(integer_to_list(ML)),
-    io:fwrite("\n"),
     true = Block#block.time > ML,
-    io:fwrite("after median check\n"),
     Height = Block#block.height,
     MB = mine_block_ago(Height - constants:block_creation_maturity()),
     true = (Height-1) == Prev#block.height,
     {CH, AH} = {Block#block.channels, Block#block.accounts},
-    io:fwrite("before absorb txs\n"),
     {CR, AR} = absorb_txs(ParentPlus, MB, Height, Block#block.txs),
-    io:fwrite("after absorb txs\n"),
     CH = channel:root_hash(CR),
     AH = account:root_hash(AR),
     MyAddress = keys:address(),
@@ -243,23 +263,25 @@ check2(PowBlock) ->
 	    %because of hash_check, this function is only run once per block. 
 	_ -> ok
     end,
-    io:fwrite("finishing absorb\n"),
-    #block_plus{block = PowBlock, channels = CR, accounts = AR, accumulative_difficulty = next_acc(ParentPlus, Block#block.difficulty), prev_hashes = prev_hashes(hash(Prev))}.
+    BP#block_plus{block = Block, channels = CR, accounts = AR, accumulative_difficulty = next_acc(ParentPlus, Block#block.difficulty), prev_hashes = prev_hashes(hash(Prev))}.
+
 mine_block_ago(Height) when Height < 1 ->
     -1;
 mine_block_ago(Height) ->
     BP = block:read_int(Height),
-    Block = pow:data(BP#block_plus.block),
+    Block = block(BP),
+    %Block = pow:data(BP#block_plus.block),
     Block#block.mines_block.
 
 median_last(BH, N) ->
     median(block_times(BH, N)).
 block_times(_, 0) -> [];
-block_times(0, N) ->
+block_times(<<0:96>>, N) ->
     list_many(N, 0);
 block_times(H, N) ->
     BP = block:read(H),
-    Block = pow:data(BP#block_plus.block),
+    Block = block(BP),
+    %Block = pow:data(BP#block_plus.block),
     BH2 = Block#block.prev_hash,
     T = Block#block.time,
     [T|block_times(BH2, N-1)].
@@ -331,8 +353,9 @@ new_id(N, Accounts) ->
 	   
 mine_test() ->
     PH = top:doit(),
-    {block_plus, Block, _, _, _} = make(PH, [], keys:id()),
-    PBlock = mine(Block, 1000000000),
+    %{block_plus, Block, _, _, _} = make(PH, [], keys:id()),
+    BP = make(PH, [], keys:id()),
+    PBlock = mine(BP, 1000000000),
     block_absorber:doit(PBlock),
     mine_blocks(10, 100000),
     success.
@@ -351,7 +374,9 @@ mine_blocks(N, Times) ->
 		 {NewID, keys:address()};
 	     {_, Identity} -> Identity
 	 end,
-    {block_plus, Block, _, _, _, _} = make(PH, Txs, ID),
+    %{block_plus, Block, _, _, _, _, _} = make(PH, Txs, ID),
+    %{block_plus, Block, _, _, _, _, _} = 
+    BP = make(PH, Txs, ID),
     
     %io:fwrite("mining attempt #"),
     %io:fwrite(integer_to_list(N)),
@@ -366,7 +391,7 @@ mine_blocks(N, Times) ->
     %io:fwrite(" CPU"),
     %io:fwrite("\n"),
     F = fun() ->
-		case mine(Block, Times) of
+		case mine(BP, Times) of
 		    false -> false;
 		    PBlock -> 
 			io:fwrite("FOUND A BLOCK !\n"),
