@@ -243,6 +243,20 @@ test(6) ->
     io:fwrite("before absorb \n"),
     absorb(Stx4),
     io:fwrite("after absorb \n"),
+    {Accounts5, Channels3, _, _Txs} = tx_pool:data(),
+
+    ScriptSig3 = compiler_chalang:doit(<<" int 3 ">>),
+    {Ctx5, _} = channel_slash_tx:make(1,Fee,SignedScriptPubKey,[ScriptSig2],Accounts5,Channels3),
+    Stx5 = keys:sign(Ctx5, Accounts5),
+    %Stx4 = keys:sign(Ctx4, Accounts4),
+    io:fwrite("before absorb \n"),
+    absorb(Stx5),
+    io:fwrite("after absorb \n"),
+    {Accounts6, Channels4, _, _Txs2} = tx_pool:data(),
+
+    {Ctx6, _} = channel_timeout_tx:make(1,Accounts6,Channels4,CID,Fee),
+    Stx6 = keys:sign(Ctx6, Accounts6),
+    absorb(Stx6),
     {_, _, _, Txs} = tx_pool:data(),
 
     Block = block:mine(block:make(PH, Txs, 1), 10000000000),%1 is the master pub

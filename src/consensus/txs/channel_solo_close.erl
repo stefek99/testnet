@@ -22,7 +22,7 @@ doit(Tx, Channels, Accounts, NewHeight) ->
     SPK = Tx#csc.scriptpubkey,
     CID = spk:cid(testnet_sign:data(SPK)),
     {_, OldChannel, _} = channel:get(CID, Channels),
-    Channel = channel:update(CID, Channels, none, channel:rent(OldChannel), 0,0,0, channel:delay(OldChannel), NewHeight),
+    Channel = channel:update(From, CID, Channels, none, channel:rent(OldChannel), 0,0,0, channel:delay(OldChannel), NewHeight),
     true = testnet_sign:verify(SPK, Accounts),
     ScriptPubkey = testnet_sign:data(SPK),
     Acc1 = channel:acc1(Channel),
@@ -49,7 +49,7 @@ doit(Tx, Channels, Accounts, NewHeight) ->
 	_ -> Acc1 = Acc2
     end,
     true = NewCNonce > channel:nonce(Channel),
-    NewChannel = channel:update(CID, Channels, NewCNonce, 0, -(Amount), Amount, Mode, spk:delay(ScriptPubkey), NewHeight),
+    NewChannel = channel:update(From, CID, Channels, NewCNonce, 0, -(Amount), Amount, Mode, spk:delay(ScriptPubkey), NewHeight),
     NewChannels = channel:write(NewChannel, Channels),
     Facc = account:update(From, Accounts, -Tx#csc.fee, Tx#csc.nonce, NewHeight),
     NewAccounts = account:write(Accounts, Facc),

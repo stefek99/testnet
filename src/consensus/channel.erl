@@ -12,16 +12,16 @@
 		  acc2 = 0, 
 		  bal1 = 0, 
 		  bal2 = 0, 
+		  amount = 0, %this is how we remember the outcome of the last contract we tested, that way we can undo it.
 		  nonce = 0,%How many times has this channel-state been updated. If your partner has a state that was updated more times, then they can use it to replace your final state.
 		  timeout_height = 0,%when one partner disappears, the other partner needs to wait so many blocks until they can access their money. This records the time they started waiting. 
 		  last_modified = 0,%this is used so that the owners of the channel can pay a fee for how long the channel has been open.
-		  rent = 0,
-		  rent_direction = 0,%0 or 1
 % we can set timeout_height to 0 to signify that we aren't in timeout mode. So we don't need the timeout flag.
 		  mode = 0,%0 means an active channel where money can be spent. 1 means that the channel is being closed by acc1. 2 means that the channel is being closed by acc2.
 		  entropy = 0, %This is a nonce so that old channel contracts can't be reused, even if you make a new channel with the same partner you previously had a channel with.
-		  delay = 0%this is how long you have to wait since "last_modified" to do a channel_timeout_tx.
+		  delay = 0,%this is how long you have to wait since "last_modified" to do a channel_timeout_tx.
 		  %we need to store this between a solo_close_tx and a channel_timeout_tx. That way we know we waited for long enough.
+		  slasher = 0 %this is how we remember who was the last user to do a slash on a channel. If he is the last person to slash, then he gets a reward.
 		  }%
        ).
 acc1(C) -> C#channel.acc1.
@@ -34,11 +34,10 @@ mode(C) -> C#channel.mode.
 entropy(C) -> C#channel.entropy.
 nonce(C) -> C#channel.nonce.
 delay(C) -> C#channel.delay.
-rent(C) -> C#channel.rent.
-rent_direction(C) -> C#channel.rent_direction.
+slasher(C) -> C#channel.slasher.
 
 
-update(ID, Channels, Nonce, NewRent,Inc1, Inc2, Mode, Delay, Height) ->
+update(Slasher, ID, Channels, Nonce, Inc1, Inc2, Mode, Delay, Height) ->
     true = Inc1 + Inc2 >= 0,
     {_, Channel, _} = get(ID, Channels),
     CNonce = Channel#channel.nonce,
@@ -53,15 +52,6 @@ update(ID, Channels, Nonce, NewRent,Inc1, Inc2, Mode, Delay, Height) ->
     DH = Height - T1,
     Rent = constants:channel_rent() * DH,
     RH = Rent div 2,%everyone needs to pay the network for the cost of having a channel open.
-    S = case Channel#channel.rent_direction of
-	0 -> -1;
-	1 -> 1
-    end,
-    NewRD = if
-		NewRent > 0 -> 1;
-		true -> 0
-	    end,
-			    
     CR = S * Channel#channel.rent,
     Bal1a = Channel#channel.bal1 + Inc1 - RH + CR,
     Bal2a = Channel#channel.bal2 + Inc2 - RH - CR,
@@ -75,11 +65,10 @@ update(ID, Channels, Nonce, NewRent,Inc1, Inc2, Mode, Delay, Height) ->
     Channel#channel{bal1 = Bal1c,
 		    bal2 = Bal2c,
 		    nonce = NewNonce,
-		    rent = NewRent,
-		    rent_direction = NewRD,
 		    last_modified = Height,
 		    delay = Delay,
-		    mode = Mode
+		    mode = Mode,
+		    slasher = Slasher
 		   }.
     
 new(ID, Acc1, Acc2, Bal1, Bal2, Height, Entropy, Rent, Delay) ->
