@@ -1,8 +1,24 @@
-headers should point at previous header, not at previous block.
+Right now the block creator is incentivized to censor any channel_slash tx and replace it with their own.
+We need a way for the slasher to get rewarded for slashing. We need to split it up into a commit-reveal. So you can only slash something that you committed to slashing recently.
+
+the account channel:slasher() needs to be rewarded in channel_timeout:doit().
+
+in channel_solo_close we update the channel:amount written on-chain. this is a problem, because when we slash, we want to undo the channel_solo_close.
+We need to look at the tests, maybe we are testing the wrong thing, or we aren't testing the right thing.
+
+right now in channel_solo_close we have a big check to make sure that we can afford to pay the slash_reward, which is hard-coded into the spk.
+instead, we should let them use the turing complete state channels to program stuff like this.
+I want to think about this more before I delete the code.
+For the same reason we should get rid of channel_rent. This is something that could be programmed.
+the big case statement at line 48 of channel_solo_close seems bad. shouldn't we make sure that both balances are positive, not just one?
+
+It is currently possible for an attacker to trick us into ignoring a good block. They trick us into storing a good blocks hash into block_hashes. They give us a good block's header, but mix in some bad transactions, or censor a transaction.
+To fix this, each header should contain a hash of all the transactions. We should include the signatures in this hash. This gives us a guarantee that all the data is available at block:check1.
+
+We need a way to close a channel when your partner refuses to sign any SPK. It can either be a new tx type, or we can make solo_close more complex.
 
 
 constants:difficulty_bits() might be too big.
-
 
 
 the new way of doing channel slash has a different problem.
@@ -10,6 +26,7 @@ We need the channel to finish at the highest nonce possible. The third party cou
 We need some way to do the channel_slash transaction again and again, until a higher nonce cannot be found.
 Each slasher puts up a deposit, and takes the deposit of the previous.
 If the same channel_slash exists for a long enough time period, then anyone can do a channel_timeout transaction, to close the channel.
+We need to also add a way for the two parties to work together to close the channel early, so they don't have to wait to do a timeout_tx. We can either make a new tx, or make channel_team_close more complicated.
 
 
 We should use a CLI program to talk to the node instead of using erlang directly.
