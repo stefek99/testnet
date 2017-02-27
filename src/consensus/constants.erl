@@ -107,6 +107,7 @@ account_size() ->
     (?AccountSizeWithoutPadding + account_padding()) div 8.
 channel_size() ->    
     (?ChannelSizeWithoutPadding + channel_padding()) div 8.
+existence_size() -> acc_bits().%hash_length*8
 
 channel_rent() -> account_rent().
 account_rent() -> round(math:pow(2, 13)).

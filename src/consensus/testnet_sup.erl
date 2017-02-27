@@ -26,7 +26,8 @@ init([]) ->
     Children = child_maker(?keys),
     Tries = [
 		{accounts_sup, {trie_sup, start_link, [KeyLength, constants:account_size(), accounts, Amount, hd]}, permanent, 5000, supervisor, [trie_sup]},
-		{channels_sup, {trie_sup, start_link, [KeyLength, constants:channel_size(), channels, Amount, hd]}, permanent, 5000, supervisor, [trie_sup]} 
+		{channels_sup, {trie_sup, start_link, [KeyLength, constants:channel_size(), channels, Amount, hd]}, permanent, 5000, supervisor, [trie_sup]},
+		{existence_sup, {trie_sup, start_link, [KeyLength, constants:existence_size(), existence, Amount, hd]}, permanent, 5000, supervisor, [trie_sup]} 
 	    ],
     {ok, { {one_for_one, 50000, 1}, Tries ++ Children} }.
 

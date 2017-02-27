@@ -35,33 +35,21 @@ doit(Tx, Channels, Accounts, NewHeight) ->
     true = channel:entropy(OldChannel) == spk:entropy(ScriptPubkey),
     %NewCNonce = spk:nonce(ScriptPubkey),
     SS = Tx#csc.scriptsig,
-    io:fwrite("channel solo close "),
-    io:fwrite(packer:pack(SS)),
-    io:fwrite("\n"),
     {Amount, NewCNonce} = spk:run(fast, SS, ScriptPubkey, NewHeight, 0, Accounts, Channels),
     false = Amount == 0,
     SR = spk:slash_reward(ScriptPubkey),
     true = NewCNonce > channel:nonce(OldChannel),
     NewChannel = channel:update(From, CID, Channels, NewCNonce, 0, 0, Amount, spk:delay(ScriptPubkey), NewHeight),
-    io:fwrite("channel solo close amount is "),
-    io:fwrite(integer_to_list(channel:amount(NewChannel))),
-    io:fwrite("\n"),
     case From of %channels can only delete money that was inside the channel.
 	%only the other person can slash, so only check that we can afford to pay it.
 	Acc1 -> true = (-1 < (channel:bal1(NewChannel)-SR-Amount));
 	Acc2 -> true = (-1 < (channel:bal2(NewChannel)-SR+Amount));
 	_ -> Acc1 = Acc2
     end,
-    io:fwrite("in channel solo close amount is "),
-    io:fwrite(integer_to_list(channel:amount(NewChannel))),
-    io:fwrite("\n"),
     NewChannels = channel:write(NewChannel, Channels),
     Facc = account:update(From, Accounts, -Tx#csc.fee, Tx#csc.nonce, NewHeight),
     NewAccounts = account:write(Accounts, Facc),
     spawn(fun() -> check_slash(From, Acc1, Acc2, SS, SPK, NewAccounts, NewChannels, NewCNonce) end), %If our channel is closing somewhere we don't like, then we need to use a channel_slash transaction to stop them and save our money.
-    io:fwrite("channel solo close channel is "),
-    io:fwrite(packer:pack(NewChannel)),
-    io:fwrite("\n"),
     {NewChannels, NewAccounts}.
 
 check_slash(From, Acc1, Acc2, TheirSS, SSPK, Accounts, Channels, TheirNonce) ->
@@ -69,9 +57,6 @@ check_slash(From, Acc1, Acc2, TheirSS, SSPK, Accounts, Channels, TheirNonce) ->
     %From = MyID,
     SPK = testnet_sign:data(SSPK),
     {_, Nonce, SSM, _OurSecret} = next_ss(From, TheirSS, SPK, Acc1, Acc2, Accounts, Channels),
-    io:fwrite("their nonce is "),
-    io:fwrite(integer_to_list(TheirNonce)),
-    io:fwrite("\n"),
     true = Nonce > TheirNonce,
     timer:sleep(40000),%we need to wait enough time to finish loading the current block before we make this tx
     %Depending
