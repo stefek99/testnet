@@ -23,11 +23,12 @@ stop() ->
 init([]) ->
     Amount = constants:trie_size(),
     KeyLength = constants:key_length(), 
+    FullLength = trie_hash:hash_depth()*2,
     Children = child_maker(?keys),
     Tries = [
 		{accounts_sup, {trie_sup, start_link, [KeyLength, constants:account_size(), accounts, Amount, hd]}, permanent, 5000, supervisor, [trie_sup]},
 		{channels_sup, {trie_sup, start_link, [KeyLength, constants:channel_size(), channels, Amount, hd]}, permanent, 5000, supervisor, [trie_sup]},
-		{existence_sup, {trie_sup, start_link, [KeyLength, constants:existence_size(), existence, Amount, hd]}, permanent, 5000, supervisor, [trie_sup]} 
+		{existence_sup, {trie_sup, start_link, [FullLength, 0, existence, Amount, hd]}, permanent, 5000, supervisor, [trie_sup]} %24 is long enough to use the hash as the position to store.
 	    ],
     {ok, { {one_for_one, 50000, 1}, Tries ++ Children} }.
 
