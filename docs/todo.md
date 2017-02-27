@@ -1,5 +1,13 @@
+channel_slash needs a commit-reveal. That way the miner wont just steal your evidence.
+
+
+
 Right now the block creator is incentivized to censor any channel_slash tx and replace it with their own.
 We need a way for the slasher to get rewarded for slashing. We need to split it up into a commit-reveal. So you can only slash something that you committed to slashing recently.
+   The commit transaction can be combined with out planned proof of existence transaction type.
+
+Multiple users might commit to revealing stuff at the same time. We need to remember all these commitments.
+We need a merkle trie to store these commits.
 
 the account channel:slasher() needs to be rewarded in channel_timeout:doit().
 

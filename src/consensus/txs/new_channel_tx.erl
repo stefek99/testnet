@@ -59,7 +59,7 @@ doit(Tx, Channels, Accounts, NewHeight) ->
     Rent = Tx#nc.rent,
     Entropy = Tx#nc.entropy,
     Delay = Tx#nc.delay,
-    NewChannel = channel:new(ID, Aid1, Aid2, Bal1, Bal2, NewHeight, Entropy, Rent, Delay),
+    NewChannel = channel:new(ID, Aid1, Aid2, Bal1, Bal2, NewHeight, Entropy, Delay),
     NewChannels = channel:write(NewChannel, Channels),
     CCFee = constants:create_channel_fee() div 2,
     Acc1 = account:update(Aid1, Accounts, -Bal1-CCFee, Tx#nc.nonce, NewHeight),

@@ -85,6 +85,7 @@ word_size() -> 100000.
 
 
 balance_bits() -> 48.%total number of coins is 2^(balance_bits()).
+half_bal() -> round(math:pow(2, balance_bits()-1)).
 acc_bits() -> trie_hash:hash_depth()*8.%total number of accounts is 2^(acc_bits()) 800 billion.
 height_bits() -> 32. %maximum number of blocks is 2^this
 account_nonce_bits() -> 20.%maximum number of times you can update an account's state is 2^this.
@@ -95,9 +96,9 @@ channel_delay_bits() -> 32. %2^this is the maximum amount of blocks you could ha
 -define(AccountSizeWithoutPadding, (balance_bits() + height_bits() + account_nonce_bits() + acc_bits() + key_length())).
 -define(ChannelSizeWithoutPadding, 
 	(key_length() + (acc_bits()*2) + 
-	     (balance_bits()*2) + channel_nonce_bits() + 
-	     (height_bits()*2) + channel_rent_bits() + 
-	     1 + 2 + channel_entropy() + channel_delay_bits())).
+	     (balance_bits()*4) + channel_nonce_bits() + 
+	     (height_bits()*2) + 
+	     channel_entropy() + channel_delay_bits())).
 account_padding() ->    
     8 - (?AccountSizeWithoutPadding rem 8).
 channel_padding() ->

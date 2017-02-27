@@ -8,6 +8,9 @@ scriptpubkey(X) -> X#csc.scriptpubkey.
 make(From, Fee, ScriptPubkey, ScriptSig, Accounts, Channels) ->
     %true = is_list(ScriptSig),
     CID = spk:cid(testnet_sign:data(ScriptPubkey)),
+    io:fwrite("in channel solo close make CID is "),
+    io:fwrite(integer_to_list(CID)),
+    io:fwrite("\n"),
     {_, Acc, Proof1} = account:get(From, Accounts),
     {_, _Channel, Proofc} = channel:get(CID, Channels),
     
@@ -22,38 +25,43 @@ doit(Tx, Channels, Accounts, NewHeight) ->
     SPK = Tx#csc.scriptpubkey,
     CID = spk:cid(testnet_sign:data(SPK)),
     {_, OldChannel, _} = channel:get(CID, Channels),
-    Channel = channel:update(From, CID, Channels, none, channel:rent(OldChannel), 0,0,0, channel:delay(OldChannel), NewHeight),
+    0 = channel:amount(OldChannel),
     true = testnet_sign:verify(SPK, Accounts),
     ScriptPubkey = testnet_sign:data(SPK),
-    Acc1 = channel:acc1(Channel),
-    Acc2 = channel:acc2(Channel),
+    Acc1 = channel:acc1(OldChannel),
+    Acc2 = channel:acc2(OldChannel),
     Acc1 = spk:acc1(ScriptPubkey),
     Acc2 = spk:acc2(ScriptPubkey),
-    true = channel:entropy(Channel) == spk:entropy(ScriptPubkey),
+    true = channel:entropy(OldChannel) == spk:entropy(ScriptPubkey),
     %NewCNonce = spk:nonce(ScriptPubkey),
-    0 = channel:mode(Channel),
-    Mode = case From of
-	       Acc1 -> 1;
-	       Acc2 -> 2
-	   end,
     SS = Tx#csc.scriptsig,
     io:fwrite("channel solo close "),
     io:fwrite(packer:pack(SS)),
     io:fwrite("\n"),
     {Amount, NewCNonce} = spk:run(fast, SS, ScriptPubkey, NewHeight, 0, Accounts, Channels),
+    false = Amount == 0,
     SR = spk:slash_reward(ScriptPubkey),
+    true = NewCNonce > channel:nonce(OldChannel),
+    NewChannel = channel:update(From, CID, Channels, NewCNonce, 0, 0, Amount, spk:delay(ScriptPubkey), NewHeight),
+    io:fwrite("channel solo close amount is "),
+    io:fwrite(integer_to_list(channel:amount(NewChannel))),
+    io:fwrite("\n"),
     case From of %channels can only delete money that was inside the channel.
 	%only the other person can slash, so only check that we can afford to pay it.
-	Acc1 -> true = (-1 < (channel:bal1(Channel)-SR-Amount));
-	Acc2 -> true = (-1 < (channel:bal2(Channel)-SR+Amount));
+	Acc1 -> true = (-1 < (channel:bal1(NewChannel)-SR-Amount));
+	Acc2 -> true = (-1 < (channel:bal2(NewChannel)-SR+Amount));
 	_ -> Acc1 = Acc2
     end,
-    true = NewCNonce > channel:nonce(Channel),
-    NewChannel = channel:update(From, CID, Channels, NewCNonce, 0, -(Amount), Amount, Mode, spk:delay(ScriptPubkey), NewHeight),
+    io:fwrite("in channel solo close amount is "),
+    io:fwrite(integer_to_list(channel:amount(NewChannel))),
+    io:fwrite("\n"),
     NewChannels = channel:write(NewChannel, Channels),
     Facc = account:update(From, Accounts, -Tx#csc.fee, Tx#csc.nonce, NewHeight),
     NewAccounts = account:write(Accounts, Facc),
     spawn(fun() -> check_slash(From, Acc1, Acc2, SS, SPK, NewAccounts, NewChannels, NewCNonce) end), %If our channel is closing somewhere we don't like, then we need to use a channel_slash transaction to stop them and save our money.
+    io:fwrite("channel solo close channel is "),
+    io:fwrite(packer:pack(NewChannel)),
+    io:fwrite("\n"),
     {NewChannels, NewAccounts}.
 
 check_slash(From, Acc1, Acc2, TheirSS, SSPK, Accounts, Channels, TheirNonce) ->
