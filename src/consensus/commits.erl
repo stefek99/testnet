@@ -1,5 +1,5 @@
 -module(commits).
--export([get/2,write/2, test/0]).
+-export([get/2,write/3, test/0]).
 
 get(Hash, Commits) ->
     true = is_binary(Hash),
@@ -7,12 +7,17 @@ get(Hash, Commits) ->
     {X, Leaf, Proof} = trie:get(ID, Commits, existence),
     V = case Leaf of
 	    empty -> empty;
-	    L -> full
+	    L -> 
+		Y = leaf:value(L),
+		AB = constants:acc_bits(),
+		<<Z:AB>> = Y,
+		Z
 	end,
     {X, V, Proof}.
-write(Hash, Commits) ->
+write(N, Hash, Commits) ->
     ID = hash2ID(Hash),
-    trie:put(ID, <<>>, Commits, existence).
+    AB = constants:acc_bits(),
+    trie:put(ID, <<N:AB>>, Commits, existence).
 	     
 hash2ID(X) -> 
     S = size(X),
@@ -25,9 +30,10 @@ hash2ID(<<X, Y/binary>>, N) ->
 
 
 test() ->
-    C = hash:doit(1),
+    C = hash:doit(2),
     {_, empty, _} = get(C, 0),
-    NewLoc = write(C, 0),
-    {_, full, _} = get(C, NewLoc),
+    ID = 1,
+    NewLoc = write(ID, C, 0),
+    {_, ID, _} = get(C, NewLoc),
     {_, empty, _} = get(C, 0),
     success.

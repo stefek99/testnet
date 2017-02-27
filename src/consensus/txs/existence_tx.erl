@@ -8,11 +8,11 @@ make(From, Fee, Data) ->
     Tx = #ex{from = From, fee = Fee, nonce = Nonce, commit = hash:doit(Data)},
     {Tx, [Proof]}.
 doit(Tx, Channels, Accounts, Commits, NewHeight) ->
-    %charge the fee.
+    From = Tx#ex.from,
     C = Tx#ex.commit,
     {_, empty, _} = commits:get(C, Commits),
-    NewCommits = commits:write(C, Commits),
-    Acc = account:update(Tx#ex.from, Accounts, -Tx#ex.fee, Tx#ex.nonce, NewHeight),
+    NewCommits = commits:write(From, C, Commits),
+    Acc = account:update(From, Accounts, -Tx#ex.fee, Tx#ex.nonce, NewHeight),
     NewAccounts = accounts:write(Accounts, Acc),
     {Channels, NewAccounts, NewCommits}.
     
