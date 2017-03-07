@@ -1,3 +1,5 @@
+blog post about channels that use untrusted third parties to be secure. So you don't have to stay online all the time.
+
 channel_slash needs a commit-reveal. That way the miner wont just steal your evidence.
 
 

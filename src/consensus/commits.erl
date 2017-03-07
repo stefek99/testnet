@@ -34,6 +34,7 @@ test() ->
     {_, empty, _} = get(C, 0),
     ID = 1,
     NewLoc = write(ID, C, 0),
-    {_, ID, _} = get(C, NewLoc),
+    NewLoc2 = write(ID, hash:doit(4), NewLoc),
+    {_, ID, _} = get(C, NewLoc2),
     {_, empty, _} = get(C, 0),
     success.

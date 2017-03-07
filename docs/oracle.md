@@ -23,6 +23,6 @@ If the correlation is in the same direction for enough blocks, then that is the 
 Since we use an order book, it is expensive for attackers to DDOS us by moving the price past 50% every time the oracle is almost done.
 
 
-We should pay the better all at once, because only one fork can survive.
-When a better wants to get paid, they need a way to prove how they bet.
+We should pay the gambler all at once, because only one fork can survive.
+When a gambler wants to get paid, they need a way to prove how they bet.
 *** Maybe we should have a merkle root of bets in each account?
