@@ -40,3 +40,11 @@ How is a light client that doesn't bet at all supposed to know if the honest pri
 
 The miners should all make little bets in each other's oracles, and refuse to mine on top of blocks that were made by an oracle that doesn't accept trades.
 So long as the majority is following this rule, you save money by following this rule.
+
+What if the oracle manager looks at all the little bets and realizes that a customer wants to bet big in one direction, and then the oracle manager censors all trades from that person?
+Maybe oracle bets should go through lightning instead of being direct, that way the oracle manager doesn't know who's trade it is.
+
+What if the oracle manager bribes the lightning hubs to censor certain customers?
+If the lightning has enough layers, then it will be hard to censor.
+
+Also, customers could try to tick the oracle manager into thinking a bigger trade will happen than they actually want, so the manager can't infer much data from looking at trades.
