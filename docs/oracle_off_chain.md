@@ -9,7 +9,7 @@ The steps are like this:
 1) Someone commits to running the oracle market. They allow anyone to make channels with them and bet.
 2) The miners make multiple bets in the market to cancel their risk. The miners do this anonymously. 
 3) The oracle periodically publishes the prices of the different kinds of shares in the oracle. The act of publishing a price closes many open orders made in many different channels. It closes all the orders that agreed to trade at that price.
-4) Once the price stays stable for a long enough period of time, the coorelation of the decision with the difficulty is computed, and from it the blockchain learns the true fact about our world.
+4) Once the price stays stable for a long enough period of time, the coorelation of the oracle's resolution with the difficulty is computed, and from it the blockchain learns the true fact about our world.
 
 
 
