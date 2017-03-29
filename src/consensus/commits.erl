@@ -17,11 +17,11 @@ get(Hash, Commits) ->
 write(N, Hash, Commits) ->
     ID = hash2ID(Hash),
     AB = constants:acc_bits(),
-    trie:put(ID, <<N:AB>>, Commits, existence).
+    trie:put(ID, <<N:AB>>, 0, Commits, existence).
 	     
 hash2ID(X) -> 
     S = size(X),
-    S = trie_hash:hash_depth(),
+    S = constants:hash_size(),
     hash2ID(X, 0).
 hash2ID(<<>>, N) -> N;
 hash2ID(<<X, Y/binary>>, N) ->
@@ -30,11 +30,11 @@ hash2ID(<<X, Y/binary>>, N) ->
 
 
 test() ->
-    C = hash:doit(2),
+    C = testnet_hasher:doit(2),
     {_, empty, _} = get(C, 0),
     ID = 1,
     NewLoc = write(ID, C, 0),
-    NewLoc2 = write(ID, hash:doit(4), NewLoc),
+    NewLoc2 = write(ID, testnet_hasher:doit(4), NewLoc),
     {_, ID, _} = get(C, NewLoc2),
     {_, empty, _} = get(C, 0),
     success.

@@ -28,7 +28,7 @@ block_to_header(Block) ->
 	    Channels/binary,
 	    Accounts/binary,
 	    Miner:(constants:acc_bits())>>,
-    HM = hash:doit(Mid),
+    HM = testnet_hasher:doit(Mid),
     true = size(PH) == 12,
     <<PH/binary,
       HM/binary,
@@ -85,7 +85,7 @@ prev_hash(X) ->
     B = block(X),
     B#block.prev_hash.
 hash(X) -> 
-    hash:doit(term_to_binary(block_to_header(block(X)))).
+    testnet_hasher:doit(term_to_binary(block_to_header(block(X)))).
 time_now() ->
     (os:system_time() div (1000000 * constants:time_units())) - constants:start_time().
 genesis() ->
@@ -105,7 +105,8 @@ genesis() ->
 	       %mines_block = ID,
 	       %time = 0,
 	       %difficulty = constants:initial_difficulty()},
-    Block = {pow,{block,0,<<0:(8*hash:hash_depth())>>,[], ChaRoot, AccRoot,
+    %Block = {pow,{block,0,<<0:(8*hash:hash_depth())>>,[], ChaRoot, AccRoot,
+    Block = {pow,{block,0,<<0:(8*constants:hash_size())>>,[], ChaRoot, AccRoot,
 		  %<<1,223,2,81,223,207,12,158,239,5,219,253>>,
 		  %<<108,171,180,35,202,56,178,151,11,85,188,193>>,
 		  1,0,4080, constants:magic()},
@@ -169,11 +170,11 @@ mine(BP, Times) when is_record(BP, block_plus) ->
 mine2(Block, Times) ->
     Difficulty = Block#block.difficulty,
     Header = block_to_header(Block),
-    Pow = pow:pow(Header, Difficulty, Times),
+    Pow = pow:pow(Header, Difficulty, Times, constants:hash_size()),
     Pow.
-verify({Block, Pow}) ->
-    Difficulty = Block#block.difficulty,
-    true = pow:above_min(Pow, Difficulty).
+%verify({Block, Pow}) ->
+%    Difficulty = Block#block.difficulty,
+%    true = pow:above_min(Pow, Difficulty, constants:hash_size()).
 next_difficulty(ParentPlus) ->
     %Parent = pow:data(ParentPlus#block_plus.block),
     Parent = block(ParentPlus),
@@ -227,7 +228,7 @@ check1(BP) ->
 	    PowBlock = BP#block_plus.pow,
 	    Header = block_to_header(Block),
 	    Header = pow:data(PowBlock),
-	    true = pow:above_min(PowBlock, Difficulty),
+	    true = pow:above_min(PowBlock, Difficulty, constants:hash_size()),
  
 	    true = Block#block.time < time_now(),
 	    {BH, Block#block.prev_hash}

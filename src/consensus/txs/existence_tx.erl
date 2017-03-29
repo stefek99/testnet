@@ -5,7 +5,7 @@
 make(From, Fee, Data) ->
     {_, Acc, Proof} = account:get(From),
     Nonce = account:nonce(Acc) + 1,
-    Tx = #ex{from = From, fee = Fee, nonce = Nonce, commit = hash:doit(Data)},
+    Tx = #ex{from = From, fee = Fee, nonce = Nonce, commit = testnet_hasher:doit(Data)},
     {Tx, [Proof]}.
 doit(Tx, Channels, Accounts, Commits, NewHeight) ->
     From = Tx#ex.from,

@@ -1,3 +1,9 @@
+we should make sure block hashing, and other hashes are all formatted so it is easy to make a javascript wallet.
+
+
+in the white paper we should explain the centralized and trustless exchanges.
+
+
 blog post about channels that use untrusted third parties to be secure. So you don't have to stay online all the time.
 
 channel_slash needs a commit-reveal. That way the miner wont just steal your evidence.
