@@ -267,5 +267,8 @@ test(6) ->
     success;
 
 test(7) ->
-    %satoshi dice test
+    %existence tx
+    S = <<"test data">>,
+    ID = keys:id(),
+    existence_tx:make(ID, 0, S),
     success.
