@@ -74,5 +74,9 @@ easy:off().
 
 If you want to let other users download blocks from your node, then you need to make one of your ports accessible from external connections. By default it is port 8040.
 
+#### Contributing
+
+Have a look at the github issues.
+
 ### Else
 If you want to know more, check out our whitepaper on [aeternity.com](https://aeternity.com) and get in touch with us via [Gitter Chat](https://gitter.im/aeternity?Lobby) or write us (emails in whitepaper). 

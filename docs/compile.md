@@ -1,3 +1,9 @@
+Make sure your ubuntu is version 16.04 or later.
+Use this command to check your version number
+```
+lsb_release -a
+```
+
 Make sure that your system is up-to-date:
 ```
 sudo apt-get update
