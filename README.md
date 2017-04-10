@@ -6,8 +6,7 @@ This is the code used for the testnet for the [æternity](https://aeternity.com)
 This testnet uses simple PoW consensus. Its purpose is to show how state-channels work.
 
 ### Compiling and Runing
-You will need Erlang and a couple of libraries. Please follow instructions:
-[For Ubuntu](docs/compile.md)
+You will need Erlang and a couple of libraries. Please follow instructions [how to install](docs/compile.md)
 
 Then, start your node with following script:
 ```
