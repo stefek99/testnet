@@ -1,3 +1,6 @@
+
+# Ubuntu
+
 Make sure that your system is up-to-date and that you are running Ubuntu 16 or later:
 
 (earlier versions of ubuntu requires manually installing the latest version of erlang, because the package manager installs an old version)
@@ -34,3 +37,23 @@ sh install.sh
 ```
 
 Installation should be done. Now you can run your node.
+
+
+# Apple Max OS X
+
+Tested on 10.12.3
+
+You should have https://brew.sh/ installed, that makes installing other packages easier.
+
+```
+brew install erlang
+brew install rebar
+```
+
+Then follow instructions as for Ubuntu:
+```
+cd testnet/
+sh install.sh
+```
+
+It may happen that a command is not working, check if it is `./` issue, we actually asked on [Stack Overflow](https://superuser.com/questions/1196687/how-to-run-shell-scripts-starting-with-on-ubuntu-and-mac-without-any-modifica) how to make it versatile. 
